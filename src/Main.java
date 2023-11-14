@@ -35,27 +35,15 @@ public class Main {
                         System.out.println("Already connected to the database.");
                     }
                     break;
-
                 case 2:
                     if (isConnected) {
-                        for (File file : files) {
-                            String tableName = file.getName().replace(".csv", "");
-                            List<String[]> csvData = null;
-                            try {
-                                csvData = connectionManager.readCSVFile(file.getAbsolutePath());
-                            } catch (IOException e) {
-                                throw new RuntimeException(e);
-                            }
-                            connectionManager.createTables();
-                            //                                connectionManager.createTableFromCSV(connection, tableName, csvData);
-                        }
+                        connectionManager.createTables();
                         System.out.println("Tables created.");
                         connectionManager.getRecordCount(connection);
                     } else {
                         System.out.println("Not connected to the database. Please connect first.");
                     }
                     break;
-
                 case 3:
                     if (isConnected) {
                         assert files != null;
@@ -67,8 +55,6 @@ public class Main {
                             } catch (IOException e) {
                                 throw new RuntimeException(e);
                             }
-
-                            // Insert data into the table
                             try {
                                 connectionManager.insertDataIntoTable(connection, tableName, csvData);
                             } catch (SQLException e) {
@@ -105,7 +91,6 @@ public class Main {
                         System.out.println("Not connected to the database. Please connect first.");
                     }
                     break;
-
                 case 7:
                     if (isConnected) {
                         System.out.print("Enter the number of books (N): ");
@@ -132,8 +117,6 @@ public class Main {
                         System.out.println("Not connected to the database. Please connect first.");
                     }
                     break;
-
-
                 case 9:
                     if (isConnected) {
                         connectionManager.dropTables();
@@ -142,7 +125,6 @@ public class Main {
                         System.out.println("Not connected to the database. Please connect first.");
                     }
                     break;
-
                 case 0:
                     if (isConnected) {
                         try {
@@ -154,7 +136,6 @@ public class Main {
                     System.out.println("Exiting the program. Goodbye!");
                     System.exit(0);
                     break;
-
                 default:
                     System.out.println("Invalid choice. Please select a valid option.");
             }

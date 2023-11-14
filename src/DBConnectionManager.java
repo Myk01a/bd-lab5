@@ -12,7 +12,6 @@ public class DBConnectionManager {
 
     public Connection openConnection() throws SQLException {
         SQLiteConfig config = new SQLiteConfig();
-
         config.enforceForeignKeys(true);
         Connection connection = DriverManager.getConnection(JDBC_URL_IN_FILE,
                 config.toProperties());
@@ -102,93 +101,6 @@ public class DBConnectionManager {
             System.out.println("During execution of Create statement, the following SQL error occurred: " + sqlException.getMessage());
         }
     }
-//    public void createTables() {
-////        au_id,au_lname,au_fname,phone,address,city,state,zip,contract
-//        final String createAuthorsTableString =
-//                "create table if not exists authors " +
-//                        "(au_id INTEGER PRIMARY KEY , " +
-//                        "au_lname varchar(40) NOT NULL, " +
-//                        "au_fname varchar(40) NOT NULL, " +
-//                        "phone varchar(40) NOT NULL, " +
-//                        "address varchar(40) NOT NULL, " +
-//                        "city varchar(20) NOT NULL, " +
-//                        "state char(2) NOT NULL, " +
-//                        "zip char(5) NOT NULL, " +
-//                        "contract bit NOT NULL)";
-//
-//        final String createPublishersTableString =
-//                "create table if not exists publishers " +
-//                        "(pub_id char(4) NOT NULL, " +
-//                        "pub_name varchar(40) NOT NULL, " +
-//                        "city varchar(20) NOT NULL, " +
-//                        "state char(2) NOT NULL, " +
-//                        "country varchar(30) NOT NULL, " +
-//                        "PRIMARY KEY (pub_id))";
-//
-//        final String createTitlesTableString =
-//                "create table if not exists titles " +
-//                        "(title_id INTEGER PRIMARY KEY AUTOINCREMENT, " +
-//                        "title varchar(80) NOT NULL, " +
-//                        "type char(12) NOT NULL, " +
-//                        "pub_id char(4) NOT NULL, " +
-//                        "price REAL NOT NULL, " +
-//                        "advance REAL NOT NULL, " +
-//                        "royalty integer NOT NULL, " +
-//                        "ytd_sales integer NOT NULL, " +
-//                        "notes varchar(200) NOT NULL, " +
-//                        "pubdate TEXT NOT NULL, " +
-//                        "FOREIGN KEY (pub_id) REFERENCES publishers (pub_id))";
-//
-//        final String createStoresTableString =
-//                "create table if not exists stores " +
-//                        "(stor_id INTEGER PRIMARY KEY AUTOINCREMENT, " +
-//                        "stor_name varchar(40) NOT NULL, " +
-//                        "stor_address varchar(40) NOT NULL, " +
-//                        "city varchar(20) NOT NULL, " +
-//                        "state char(2) NOT NULL, " +
-//                        "zip char(2) NOT NULL)";
-//
-//        final String createTitleautorTableString =
-//                "create table if not exists titleautor " +
-//                        "(au_ord int NOT NULL, " +
-//                        "royaltyper int NOT NULL, " +
-//                        "pub_id char(4) NOT NULL, " +
-//                        "price REAL NOT NULL, " +
-//                        "advance REAL NOT NULL, " +
-//                        "royalty integer NOT NULL, " +
-//                        "au_id  integer NOT NULL, " +
-//                        "title_id integer NOT NULL, " +
-//                        "FOREIGN KEY (au_id) REFERENCES authors (au_id), " +
-//                        "FOREIGN KEY (title_id) REFERENCES titles (title_id))";
-//
-//        final String createSalesTableString =
-//                "create table if not exists sales " +
-//                        "(order_num varchar(20) PRIMARY KEY, " +
-//                        "order_date text NOT NULL, " +
-//                        "qty int NOT NULL, " +
-//                        "payterms text NOT NULL, " +
-//                        "stor_id  char(4) NOT NULL, " +
-//                        "title_id integer NOT NULL, " +
-//                        "FOREIGN KEY (stor_id) REFERENCES stores (stor_id), " +
-//                        "FOREIGN KEY (title_id) REFERENCES titles (title_id))";
-//
-//        DBConnectionManager connectionManager = new DBConnectionManager();
-//
-//        try (Connection connection = connectionManager.openConnection();
-//             Statement statement = connection.createStatement()) {
-//            System.out.println("Creating tables");
-//            statement.executeUpdate(createAuthorsTableString);
-//            statement.executeUpdate(createPublishersTableString);
-//            statement.executeUpdate(createTitlesTableString);
-//            statement.executeUpdate(createStoresTableString);
-//            statement.executeUpdate(createTitleautorTableString);
-//            statement.executeUpdate(createSalesTableString);
-//            System.out.println("Tables were created, please see report");
-//        } catch (SQLException sqlException) {
-//            System.out.println("During execution of Create statement, the following SQL error occurred: " + sqlException.getMessage());
-//        }
-//    }
-
     public void dropTables() {
         DBConnectionManager connectionManager = new DBConnectionManager();
         Connection connection = null;
@@ -236,23 +148,6 @@ public class DBConnectionManager {
             return lines;
         } catch (FileNotFoundException e) {
             throw new RuntimeException(e);
-        }
-    }
-
-    public void createTableFromCSV(Connection connection, String tableName, List<String[]> csvData) throws SQLException {
-        StringBuilder createTableSQL = new StringBuilder("CREATE TABLE IF NOT EXISTS " + tableName + " (");
-
-        String[] columnNames = csvData.get(0);
-
-        for (String columnName : columnNames) {
-            createTableSQL.append(columnName).append(" TEXT, ");
-        }
-
-        createTableSQL.setLength(createTableSQL.length() - 2);
-        createTableSQL.append(")");
-
-        try (Statement statement = connection.createStatement()) {
-            statement.executeUpdate(createTableSQL.toString());
         }
     }
 

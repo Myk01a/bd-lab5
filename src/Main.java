@@ -10,7 +10,7 @@ public class Main {
         Scanner scanner = new Scanner(System.in);
         DBConnectionManager connectionManager = new DBConnectionManager();
 
-
+        int minLengthAddress = 5;
         int choice;
         boolean isConnected = false;
         Connection connection = null;
@@ -106,7 +106,7 @@ public class Main {
                         String newAddress = scanner.nextLine();
                         System.out.print("Enter new city: ");
                         String newCity = scanner.nextLine();
-                        connectionManager.updateAuthorInfo(connection, firstName, lastName, newPhone, newAddress, newCity);
+                        connectionManager.updateAuthorInfo(connection, firstName, lastName, newPhone, newAddress, newCity, minLengthAddress);
                     } else {
                         System.out.println("Not connected to the database. Please connect first.");
                     }

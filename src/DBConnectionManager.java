@@ -44,7 +44,7 @@ public class DBConnectionManager {
                         "(pub_id VARCHAR(255) NOT NULL, " +
                         "pub_name VARCHAR(255) NOT NULL, " +
                         "city VARCHAR(255) NOT NULL, " +
-                        "state VARCHAR(255) NOT NULL, " +
+                        "state VARCHAR(255) DEFAULT NULL, " +
                         "country VARCHAR(255) NOT NULL, " +
                         "PRIMARY KEY (pub_id))";
 
@@ -83,7 +83,7 @@ public class DBConnectionManager {
         final String createSalesTableString =
                 "CREATE TABLE IF NOT EXISTS sales " +
                         "(stor_id VARCHAR(255) NOT NULL ," +
-                        "order_num VARCHAR(255) PRIMARY KEY, " +
+                        "order_num VARCHAR(255) NOT NULL, " +
                         "order_date DATE NOT NULL, " +
                         "qty INT NOT NULL, " +
                         "payterms VARCHAR(255) NOT NULL, " +
@@ -167,16 +167,34 @@ public class DBConnectionManager {
         String insertSQL = "INSERT INTO " + tableName + " VALUES (" + String.join(", ", Collections.nCopies(csvData.get(0).length, "?")) + ")";
 
         try (PreparedStatement preparedStatement = connection.prepareStatement(insertSQL)) {
+            connection.setAutoCommit(false);
+
             for (int i = 1; i < csvData.size(); i++) {
                 String[] rowData = csvData.get(i);
                 for (int j = 0; j < rowData.length; j++) {
-                    preparedStatement.setString(j + 1, rowData[j]);
+                    // Перевіряємо, чи значення не є строкою 'NULL' та встановлюємо null, якщо потрібно
+                    if ("NULL".equalsIgnoreCase(rowData[j])) {
+                        preparedStatement.setNull(j + 1, Types.NULL);
+                    } else {
+                        preparedStatement.setString(j + 1, rowData[j]);
+                    }
                 }
                 preparedStatement.addBatch();
+
+                int batchSize = 2;
+                if (i % batchSize == 0 || i == csvData.size() - 1) {
+                    preparedStatement.executeBatch();
+                    connection.commit();
+                }
             }
+
             preparedStatement.executeBatch();
+            connection.commit();
+            connection.setAutoCommit(true);
+
         } catch (SQLException sqlException) {
             System.out.println("Error inserting data into the table: " + sqlException.getMessage());
+            connection.rollback();
         } finally {
             try (Statement enableForeignKeyChecks = connection.createStatement()) {
                 enableForeignKeyChecks.execute("SET FOREIGN_KEY_CHECKS=1");
@@ -284,28 +302,85 @@ public class DBConnectionManager {
         }
     }
 
-    public void updateAuthorInfo(Connection connection, String firstName, String lastName, String newPhone, String newAddress, String newCity) {
+    public void updateAuthorInfo(Connection connection, String firstName, String lastName, String newPhone, String newAddress, String newCity, int minAddressLength) {
         try {
-            String updateQuery = "UPDATE authors SET phone = ?, address = ?, city = ? WHERE au_fname = ? AND au_lname = ?";
+            connection.setAutoCommit(false);
 
-            try (PreparedStatement updateStatement = connection.prepareStatement(updateQuery)) {
-                updateStatement.setString(1, newPhone);
-                updateStatement.setString(2, newAddress);
-                updateStatement.setString(3, newCity);
-                updateStatement.setString(4, firstName);
-                updateStatement.setString(5, lastName);
+            // Отримуємо поточні дані автора
+            String getCurrentDataQuery = "SELECT phone, address, city FROM authors WHERE au_fname = ? AND au_lname = ?";
+            try (PreparedStatement getCurrentDataStatement = connection.prepareStatement(getCurrentDataQuery)) {
+                getCurrentDataStatement.setString(1, firstName);
+                getCurrentDataStatement.setString(2, lastName);
+                ResultSet currentDataResult = getCurrentDataStatement.executeQuery();
 
-                int rowsUpdated = updateStatement.executeUpdate();
-                if (rowsUpdated > 0) {
-                    System.out.println("Author information updated for " + firstName + " " + lastName);
+                if (currentDataResult.next()) {
+                    String currentPhone = currentDataResult.getString("phone");
+                    String currentAddress = currentDataResult.getString("address");
+                    String currentCity = currentDataResult.getString("city");
+
+                    System.out.println("Current Author Information:");
+                    System.out.println("Phone: " + currentPhone);
+                    System.out.println("Address: " + currentAddress);
+                    System.out.println("City: " + currentCity);
+                    System.out.println("--------------------");
+
+                    // Виводимо нові дані, які будуть встановлені
+                    System.out.println("Updated Author Information:");
+                    System.out.println("Phone: " + newPhone);
+                    System.out.println("Address: " + newAddress);
+                    System.out.println("City: " + newCity);
+                    System.out.println("--------------------");
+
+                    // Перевіряємо, чи нова адреса коротша за мінімальну довжину
+                    if (newAddress.length() < minAddressLength) {
+                        System.out.println("Transaction canceled. New address is shorter than the minimum length.");
+                        connection.rollback();
+                        System.out.println("Transaction rollback completed.");
+                    } else {
+                        // Виконуємо оновлення, оскільки умова виконана
+                        String updateQuery = "UPDATE authors SET phone = ?, address = ?, city = ? WHERE au_fname = ? AND au_lname = ?";
+                        try (PreparedStatement updateStatement = connection.prepareStatement(updateQuery)) {
+                            updateStatement.setString(1, newPhone);
+                            updateStatement.setString(2, newAddress);
+                            updateStatement.setString(3, newCity);
+                            updateStatement.setString(4, firstName);
+                            updateStatement.setString(5, lastName);
+
+                            int rowsUpdated = updateStatement.executeUpdate();
+                            if (rowsUpdated > 0) {
+                                System.out.println("Author information updated for " + firstName + " " + lastName);
+                                connection.commit();
+                                System.out.println("Transaction committed.");
+                            } else {
+                                System.out.println("Author not found or information remains unchanged.");
+                            }
+                        }
+                    }
                 } else {
-                    System.out.println("Author not found or information remains unchanged.");
+                    System.out.println("Author not found");
                 }
             }
         } catch (SQLException e) {
             System.out.println("Error updating author information: " + e.getMessage());
+            try {
+                if (connection != null) {
+                    connection.rollback();
+                    System.out.println("Transaction rollback completed due to an error.");
+                }
+            } catch (SQLException rollbackException) {
+                System.out.println("Error during transaction rollback: " + rollbackException.getMessage());
+            }
+        } finally {
+            try {
+                if (connection != null) {
+                    connection.setAutoCommit(true);
+                }
+            } catch (SQLException autoCommitException) {
+                System.out.println("Error setting auto-commit to true: " + autoCommitException.getMessage());
+            }
         }
     }
+
 
 
 }

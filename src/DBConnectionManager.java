@@ -1,89 +1,96 @@
 import com.opencsv.CSVReader;
-import org.sqlite.SQLiteConfig;
+
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.sql.*;
 import java.util.Collections;
 import java.util.List;
+import java.util.Properties;
 
 public class DBConnectionManager {
-    private static final String JDBC_URL_IN_FILE = "jdbc:sqlite:Lab1DB.db";
+//    private static final String JDBC_URL_IN_FILE = "jdbc:mysql://localhost:3306/testdb";
+//    private static final String JDBC_URL_IN_FILE = "jdbc:sqlite:Lab1DB.db";
+
+
+    private static final String JDBC_URL_MYSQL = "jdbc:mysql://localhost:3306/testdb";
+    private static final String USERNAME = System.getenv("DB_USERNAME");
+    private static final String PASSWORD = System.getenv("DB_PASSWORD");
 
     public Connection openConnection() throws SQLException {
-        SQLiteConfig config = new SQLiteConfig();
-        config.enforceForeignKeys(true);
-        Connection connection = DriverManager.getConnection(JDBC_URL_IN_FILE,
-                config.toProperties());
+        Properties properties = new Properties();
+        properties.setProperty("user", USERNAME);
+        properties.setProperty("password", PASSWORD);
+
+        Connection connection = DriverManager.getConnection(JDBC_URL_MYSQL, properties);
         return connection;
     }
 
     public void createTables() {
         final String createAuthorsTableString =
-                "create table if not exists authors " +
-                        "(au_id TEXT PRIMARY KEY , " +
-                        "au_lname TEXT NOT NULL, " +
-                        "au_fname TEXT NOT NULL, " +
-                        "phone TEXT NOT NULL, " +
-                        "address TEXT NOT NULL, " +
-                        "city TEXT NOT NULL, " +
-                        "state TEXT NOT NULL, " +
-                        "zip TEXT NOT NULL, " +
-                        "contract TEXT NOT NULL)";
+                "CREATE TABLE IF NOT EXISTS authors " +
+                        "(au_id VARCHAR(255) PRIMARY KEY, " +
+                        "au_lname VARCHAR(255) NOT NULL, " +
+                        "au_fname VARCHAR(255) NOT NULL, " +
+                        "phone VARCHAR(255) NOT NULL, " +
+                        "address VARCHAR(255) NOT NULL, " +
+                        "city VARCHAR(255) NOT NULL, " +
+                        "state VARCHAR(255) NOT NULL, " +
+                        "zip VARCHAR(255) NOT NULL, " +
+                        "contract VARCHAR(255) NOT NULL)";
 
         final String createPublishersTableString =
-                "create table if not exists publishers " +
-                        "(pub_id TEXT NOT NULL, " +
-                        "pub_name TEXT NOT NULL, " +
-                        "city TEXT NOT NULL, " +
-                        "state TEXT NOT NULL, " +
-                        "country TEXT NOT NULL, " +
+                "CREATE TABLE IF NOT EXISTS publishers " +
+                        "(pub_id VARCHAR(255) NOT NULL, " +
+                        "pub_name VARCHAR(255) NOT NULL, " +
+                        "city VARCHAR(255) NOT NULL, " +
+                        "state VARCHAR(255) NOT NULL, " +
+                        "country VARCHAR(255) NOT NULL, " +
                         "PRIMARY KEY (pub_id))";
 
-//        title_id,title,type,pub_id,price,advance,royalty,ytd_sales,notes,pubdate
         final String createTitlesTableString =
-                "create table if not exists titles " +
-                        "(title_id TEXT PRIMARY KEY , " +
-                        "title TEXT NOT NULL, " +
-                        "type TEXT NOT NULL, " +
-                        "pub_id TEXT, " +
-                        "price TEXT NOT NULL, " +
-                        "advance TEXT NOT NULL, " +
-                        "royalty TEXT NOT NULL, " +
-                        "ytd_sales TEXT NOT NULL, " +
-                        "notes TEXT NOT NULL, " +
-                        "pubdate TEXT NOT NULL, " +
+                "CREATE TABLE IF NOT EXISTS titles " +
+                        "(title_id VARCHAR(255) PRIMARY KEY , " +
+                        "title VARCHAR(255) NOT NULL, " +
+                        "type VARCHAR(255) NOT NULL, " +
+                        "pub_id VARCHAR(255), " +
+                        "price DECIMAL(10, 2) DEFAULT NULL," +
+                        "advance DECIMAL(10, 2) DEFAULT NULL, " +
+                        "royalty DECIMAL(5, 2) DEFAULT NULL, " +
+                        "ytd_sales INT DEFAULT NULL, " +
+                        "notes TEXT DEFAULT NULL," +
+                        "pubdate DATE, " +
                         "FOREIGN KEY (pub_id) REFERENCES publishers (pub_id) ON DELETE CASCADE)";
-//        stor_id,stor_name,stor_address,city,state,zip
+
         final String createStoresTableString =
-                "create table if not exists stores " +
-                        "(stor_id TEXT PRIMARY KEY , " +
-                        "stor_name TEXT NOT NULL, " +
-                        "stor_address TEXT NOT NULL, " +
-                        "city TEXT NOT NULL, " +
-                        "state TEXT NOT NULL, " +
-                        "zip TEXT NOT NULL)";
-//        au_id,title_id,au_ord,royaltyper
+                "CREATE TABLE IF NOT EXISTS stores " +
+                        "(stor_id VARCHAR(255) PRIMARY KEY , " +
+                        "stor_name VARCHAR(255) NOT NULL, " +
+                        "stor_address VARCHAR(255) NOT NULL, " +
+                        "city VARCHAR(255) NOT NULL, " +
+                        "state VARCHAR(255) NOT NULL, " +
+                        "zip VARCHAR(255) NOT NULL)";
+
         final String createTitleautorTableString =
-                "create table if not exists titleauthor " +
-                        "(au_id  TEXT NOT NULL," +
-                        "title_id TEXT NOT NULL," +
-                        "au_ord TEXT NOT NULL, " +
-                        "royaltyper TEXT NOT NULL, " +
+                "CREATE TABLE IF NOT EXISTS titleauthor " +
+                        "(au_id  VARCHAR(255) NOT NULL," +
+                        "title_id VARCHAR(255) NOT NULL," +
+                        "au_ord VARCHAR(255) NOT NULL, " +
+                        "royaltyper VARCHAR(255) NOT NULL, " +
                         "FOREIGN KEY (au_id) REFERENCES authors (au_id) ON DELETE CASCADE, " +
                         "FOREIGN KEY (title_id) REFERENCES titles (title_id) ON DELETE CASCADE)";
 
-//        stor_id,ord_num,ord_date,qty,payterms,title_id
         final String createSalesTableString =
-                "create table if not exists sales " +
-                        "(stor_id  TEXT NOT NULL ," +
-                        "order_num TEXT KEY, " +
-                        "order_date TEXT NOT NULL, " +
-                        "qty TEXT NOT NULL, " +
-                        "payterms TEXT NOT NULL, " +
-                        "title_id TEXT NOT NULL, " +
+                "CREATE TABLE IF NOT EXISTS sales " +
+                        "(stor_id VARCHAR(255) NOT NULL ," +
+                        "order_num VARCHAR(255) PRIMARY KEY, " +
+                        "order_date DATE NOT NULL, " +
+                        "qty INT NOT NULL, " +
+                        "payterms VARCHAR(255) NOT NULL, " +
+                        "title_id VARCHAR(255) NOT NULL, " +
                         "FOREIGN KEY (stor_id) REFERENCES stores (stor_id) ON DELETE CASCADE, " +
                         "FOREIGN KEY (title_id) REFERENCES titles (title_id) ON DELETE CASCADE)";
+
 
         DBConnectionManager connectionManager = new DBConnectionManager();
 
@@ -101,8 +108,8 @@ public class DBConnectionManager {
             System.out.println("During execution of Create statement, the following SQL error occurred: " + sqlException.getMessage());
         }
     }
-    public void dropTables() {
-        DBConnectionManager connectionManager = new DBConnectionManager();
+
+    public void dropTables(DBConnectionManager connectionManager) {
         Connection connection = null;
         Statement statement = null;
 
@@ -123,20 +130,19 @@ public class DBConnectionManager {
             System.out.println("During execution of Drop statement, the following SQL error occurred: "
                     + sqlException.getMessage());
         } finally {
-
-            if (statement != null) {
-                try {
+            try {
+                if (statement != null) {
                     statement.close();
-                } catch (SQLException sqlException) {
-                    System.out.println("Problem occurred during closing statement");
                 }
+            } catch (SQLException sqlException) {
+                System.out.println("Problem occurred during closing statement");
             }
-            if (connection != null) {
-                try {
+            try {
+                if (connection != null) {
                     connection.close();
-                } catch (SQLException sqlException) {
-                    System.out.println("Problem occurred during closing connection");
                 }
+            } catch (SQLException sqlException) {
+                System.out.println("Problem occurred during closing connection");
             }
         }
     }
@@ -152,10 +158,10 @@ public class DBConnectionManager {
     }
 
     public void insertDataIntoTable(Connection connection, String tableName, List<String[]> csvData) throws SQLException {
-        try (Statement pragmaStatement = connection.createStatement()) {
-            pragmaStatement.execute("PRAGMA foreign_keys = OFF;");
-        } catch (SQLException sqlException) {
-            System.out.println("Error disabling foreign keys: " + sqlException.getMessage());
+        try (Statement disableForeignKeyChecks = connection.createStatement()) {
+            disableForeignKeyChecks.execute("SET FOREIGN_KEY_CHECKS=0");
+        } catch (SQLException disableFkException) {
+            System.out.println("Error disabling foreign key checks: " + disableFkException.getMessage());
         }
 
         String insertSQL = "INSERT INTO " + tableName + " VALUES (" + String.join(", ", Collections.nCopies(csvData.get(0).length, "?")) + ")";
@@ -169,15 +175,18 @@ public class DBConnectionManager {
                 preparedStatement.addBatch();
             }
             preparedStatement.executeBatch();
-            try (Statement pragmaStatement = connection.createStatement()) {
-                pragmaStatement.execute("PRAGMA foreign_keys = ON;");
-            } catch (SQLException sqlException) {
-                System.out.println("Error enabling foreign keys: " + sqlException.getMessage());
-            }
         } catch (SQLException sqlException) {
             System.out.println("Error inserting data into the table: " + sqlException.getMessage());
+        } finally {
+            try (Statement enableForeignKeyChecks = connection.createStatement()) {
+                enableForeignKeyChecks.execute("SET FOREIGN_KEY_CHECKS=1");
+            } catch (SQLException enableFkException) {
+                System.out.println("Error enabling foreign key checks: " + enableFkException.getMessage());
+            }
         }
     }
+
+
     public void getRecordCount(Connection connection) {
         String[] tableNames = {"authors", "publishers", "titles", "stores", "titleauthor", "sales"};
 
@@ -185,13 +194,17 @@ public class DBConnectionManager {
             for (String tableName : tableNames) {
                 String countQuery = "SELECT COUNT(*) AS count FROM " + tableName;
                 ResultSet resultSet = statement.executeQuery(countQuery);
+                resultSet.next();
                 int count = resultSet.getInt("count");
+
                 System.out.println("Table " + tableName + " has " + count + " records.");
             }
         } catch (SQLException e) {
             System.out.println("Error getting record count: " + e.getMessage());
         }
     }
+
+
     public void deleteAllDataFromTable(Connection connection, String tableName) {
         try (Statement statement = connection.createStatement()) {
             String deleteQuery = "DELETE FROM " + tableName;
@@ -201,6 +214,7 @@ public class DBConnectionManager {
             System.out.println("Error deleting data from table " + tableName + ": " + e.getMessage());
         }
     }
+
     public void searchBooksByAuthor(Connection connection, String firstName, String lastName) {
         try {
             String authorIdQuery = "SELECT au_id FROM authors WHERE au_fname = ? AND au_lname = ?";
@@ -242,6 +256,7 @@ public class DBConnectionManager {
             System.out.println("Error searching books by author: " + e.getMessage());
         }
     }
+
     public void searchAuthorsWithMoreThanNBooks(Connection connection, int N) {
         try {
             String authorsQuery = "SELECT authors.au_fname, authors.au_lname, COUNT(titleauthor.title_id) AS book_count " +
@@ -251,7 +266,7 @@ public class DBConnectionManager {
                     "HAVING COUNT(titleauthor.title_id) > ?";
 
             try (PreparedStatement authorsStatement = connection.prepareStatement(authorsQuery)) {
-                authorsStatement.setInt(1, N-1);
+                authorsStatement.setInt(1, N - 1);
                 ResultSet authorsResult = authorsStatement.executeQuery();
 
                 while (authorsResult.next()) {
@@ -268,6 +283,7 @@ public class DBConnectionManager {
             System.out.println("Error searching authors with more than N books: " + e.getMessage());
         }
     }
+
     public void updateAuthorInfo(Connection connection, String firstName, String lastName, String newPhone, String newAddress, String newCity) {
         try {
             String updateQuery = "UPDATE authors SET phone = ?, address = ?, city = ? WHERE au_fname = ? AND au_lname = ?";
